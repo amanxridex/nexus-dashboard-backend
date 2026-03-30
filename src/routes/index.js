@@ -6,7 +6,7 @@ const { getFests, updateFestStatus } = require('../controllers/adminFestControll
 const { getUsers, getHosts, updateHostVerification } = require('../controllers/adminUserController');
 const { getBookings } = require('../controllers/adminBookingController');
 const { getPayments } = require('../controllers/adminPaymentController');
-const { getColleges } = require('../controllers/adminCollegeController');
+const { getColleges, addCollege, updateCollege, deleteCollege } = require('../controllers/adminCollegeController');
 const { getAnalytics } = require('../controllers/adminAnalyticsController');
 
 // Health Check
@@ -36,6 +36,9 @@ router.get('/admin/payments', getPayments);
 
 // Admin - Colleges
 router.get('/admin/colleges', getColleges);
+router.post('/admin/colleges', addCollege);
+router.put('/admin/colleges/:id', updateCollege);
+router.delete('/admin/colleges/:id', deleteCollege);
 
 // Admin - Analytics
 router.get('/admin/analytics', getAnalytics);
