@@ -133,7 +133,8 @@ exports.getNotificationHistory = async (req, res, next) => {
         combined.forEach(n => {
             const key = n.title + '|' + n.body + '|' + n.audience;
             if (!historyMeta[key]) {
-                historyMeta[key] = { ...n, count: 1 };
+                const broadcast_id = Buffer.from(key).toString('base64');
+                historyMeta[key] = { ...n, count: 1, broadcast_id };
             } else {
                 historyMeta[key].count += 1;
             }
@@ -152,6 +153,77 @@ exports.getNotificationHistory = async (req, res, next) => {
         });
     } catch (error) {
         console.error('Error fetching notification history:', error);
+        next(error);
+    }
+};
+
+exports.getBroadcastDetails = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        if (!id) return res.status(400).json({ success: false, message: 'Broadcast ID required' });
+
+        const decoded = Buffer.from(id, 'base64').toString('ascii');
+        const [title, body, audience] = decoded.split('|');
+
+        if (!title || !body || !audience) return res.status(400).json({ success: false, message: 'Invalid Broadcast ID' });
+
+        const db = audience === 'Host' ? hostDb : userDb;
+        const tableName = audience === 'Host' ? 'hosts' : 'users';
+
+        // 1. Fetch all firebase_uids that received this exact broadcast from notifications table
+        const { data: notifs, error: notifErr } = await db.from('notifications')
+            .select('firebase_uid, created_at')
+            .eq('title', title)
+            .eq('body', body);
+
+        if (notifErr || !notifs || notifs.length === 0) {
+            return res.status(404).json({ success: false, message: 'No recipients found for this broadcast' });
+        }
+
+        const uids = notifs.map(n => n.firebase_uid).filter(Boolean);
+
+        // 2. Fetch the actual user details of those recipients
+        const { data: usersInfo, error: userErr } = await db.from(tableName)
+            .select('firebase_uid, full_name, email, phone, fcm_token')
+            .in('firebase_uid', uids);
+
+        if (userErr) {
+            console.error('Error fetching recipient details:', userErr);
+            return res.status(500).json({ success: false, message: 'Failed to fetch recipient details' });
+        }
+
+        // 3. Map details into final array
+        const recipientList = notifs.map(n => {
+            const u = usersInfo?.find(u => u.firebase_uid === n.firebase_uid) || {};
+            return {
+                firebase_uid: n.firebase_uid,
+                sent_at: n.created_at,
+                full_name: u.full_name || 'N/A',
+                email: u.email || 'N/A',
+                phone: u.phone_number || 'N/A', // Assuming column name is phone_number or phone, check later if UI is empty
+                fcm_token: u.fcm_token || 'N/A'
+            };
+        });
+
+        // Safe check for "phone" column if "phone_number" wasn't defined
+        // Supabase schema check
+        if (usersInfo && usersInfo.length > 0 && typeof usersInfo[0].phone !== 'undefined') {
+             recipientList.forEach(r => {
+                 const u = usersInfo.find(u => u.firebase_uid === r.firebase_uid);
+                 if (u && u.phone) r.phone = u.phone;
+             });
+        }
+
+        return res.status(200).json({
+            success: true,
+            title,
+            body,
+            audience,
+            recipients: recipientList
+        });
+
+    } catch (error) {
+        console.error('Error fetching broadcast details:', error);
         next(error);
     }
 };
