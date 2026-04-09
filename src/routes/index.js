@@ -8,6 +8,7 @@ const { getBookings } = require('../controllers/adminBookingController');
 const { getPayments } = require('../controllers/adminPaymentController');
 const { getColleges, addCollege, updateCollege, deleteCollege } = require('../controllers/adminCollegeController');
 const { getAnalytics } = require('../controllers/adminAnalyticsController');
+const { sendAdminNotification } = require('../controllers/adminNotificationController');
 
 // Health Check
 router.get('/health', (req, res) => {
@@ -42,5 +43,8 @@ router.delete('/admin/colleges/:id', deleteCollege);
 
 // Admin - Analytics
 router.get('/admin/analytics', getAnalytics);
+
+// Admin - Notifications
+router.post('/admin/notifications/send', sendAdminNotification);
 
 module.exports = router;
