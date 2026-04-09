@@ -25,6 +25,12 @@ exports.sendAdminNotification = async (req, res, next) => {
                 const chunk = messageTokens.slice(i, i + chunkSize);
                 const message = {
                     notification: { title, body },
+                    webpush: {
+                        notification: {
+                            icon: 'https://reseat.vercel.app/assets/logo.png', // Main Nexus app logo
+                            badge: 'https://reseat.vercel.app/assets/logo.png'
+                        }
+                    },
                     data: { type },
                     tokens: chunk,
                 };
@@ -95,6 +101,39 @@ exports.sendAdminNotification = async (req, res, next) => {
 
     } catch (error) {
         console.error('Error sending admin notification:', error);
+        next(error);
+    }
+};
+
+exports.getNotificationHistory = async (req, res, next) => {
+    try {
+        // Fetch from both databases
+        const { data: userNotifs, error: userErr } = await userDb.from('notifications')
+            .select('id, title, body, type, is_read, created_at, firebase_uid, target:firebase_uid')
+            .order('created_at', { ascending: false })
+            .limit(30);
+
+        const { data: hostNotifs, error: hostErr } = await hostDb.from('notifications')
+            .select('id, title, body, type, is_read, created_at, firebase_uid, target:firebase_uid')
+            .order('created_at', { ascending: false })
+            .limit(30);
+
+        if (userErr && !userNotifs) console.error("User notices fetch err", userErr);
+        if (hostErr && !hostNotifs) console.error("Host notices fetch err", hostErr);
+
+        let combined = [];
+        if (userNotifs) combined.push(...userNotifs.map(n => ({ ...n, audience: 'User' })));
+        if (hostNotifs) combined.push(...hostNotifs.map(n => ({ ...n, audience: 'Host' })));
+
+        // Sort combined array by created_at DESC
+        combined.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+        return res.status(200).json({
+            success: true,
+            data: combined.slice(0, 50)
+        });
+    } catch (error) {
+        console.error('Error fetching notification history:', error);
         next(error);
     }
 };
