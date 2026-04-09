@@ -111,12 +111,12 @@ exports.getNotificationHistory = async (req, res, next) => {
         const { data: userNotifs, error: userErr } = await userDb.from('notifications')
             .select('id, title, body, type, is_read, created_at, firebase_uid, target:firebase_uid')
             .order('created_at', { ascending: false })
-            .limit(30);
+            .limit(200);
 
         const { data: hostNotifs, error: hostErr } = await hostDb.from('notifications')
             .select('id, title, body, type, is_read, created_at, firebase_uid, target:firebase_uid')
             .order('created_at', { ascending: false })
-            .limit(30);
+            .limit(200);
 
         if (userErr && !userNotifs) console.error("User notices fetch err", userErr);
         if (hostErr && !hostNotifs) console.error("Host notices fetch err", hostErr);
@@ -125,12 +125,30 @@ exports.getNotificationHistory = async (req, res, next) => {
         if (userNotifs) combined.push(...userNotifs.map(n => ({ ...n, audience: 'User' })));
         if (hostNotifs) combined.push(...hostNotifs.map(n => ({ ...n, audience: 'Host' })));
 
-        // Sort combined array by created_at DESC
+        // Sort combined array by created_at DESC first so newest determines the group stamp
         combined.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+        // Group together broadcasts so the Admin doesn't get spammed by 50 rows of the same message
+        let historyMeta = {};
+        combined.forEach(n => {
+            const key = n.title + '|' + n.body + '|' + n.audience;
+            if (!historyMeta[key]) {
+                historyMeta[key] = { ...n, count: 1 };
+            } else {
+                historyMeta[key].count += 1;
+            }
+        });
+
+        let deduplicated = Object.values(historyMeta).map(n => {
+            if (n.count > 1) {
+                n.target = `Broadcast (${n.count} recipients)`;
+            }
+            return n;
+        });
 
         return res.status(200).json({
             success: true,
-            data: combined.slice(0, 50)
+            data: deduplicated.slice(0, 50)
         });
     } catch (error) {
         console.error('Error fetching notification history:', error);
