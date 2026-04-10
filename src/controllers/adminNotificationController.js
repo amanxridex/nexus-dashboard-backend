@@ -184,7 +184,7 @@ exports.getBroadcastDetails = async (req, res, next) => {
 
         // 2. Fetch the actual user details of those recipients
         const { data: usersInfo, error: userErr } = await db.from(tableName)
-            .select('firebase_uid, full_name, email, phone, fcm_token')
+            .select('firebase_uid, full_name, email, phone, fcm_token, device_info, current_location')
             .in('firebase_uid', uids);
 
         if (userErr) {
@@ -201,7 +201,9 @@ exports.getBroadcastDetails = async (req, res, next) => {
                 full_name: u.full_name || 'N/A',
                 email: u.email || 'N/A',
                 phone: u.phone || 'N/A',
-                fcm_token: u.fcm_token || 'N/A'
+                fcm_token: u.fcm_token || 'N/A',
+                device_info: u.device_info || 'Unknown',
+                current_location: u.current_location || 'Not Available'
             };
         });
 
