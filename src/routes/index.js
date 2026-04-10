@@ -3,7 +3,7 @@ const router = express.Router();
 
 const { getDashboardStats, getRecentActivity, getTopFests } = require('../controllers/dashboardController');
 const { getFests, updateFestStatus } = require('../controllers/adminFestController');
-const { getUsers, getHosts, updateHostVerification } = require('../controllers/adminUserController');
+const { getUsers, getHosts, updateHostVerification, getUserAnalytics } = require('../controllers/adminUserController');
 const { getBookings } = require('../controllers/adminBookingController');
 const { getPayments } = require('../controllers/adminPaymentController');
 const { getColleges, addCollege, updateCollege, deleteCollege } = require('../controllers/adminCollegeController');
@@ -26,6 +26,7 @@ router.put('/admin/fests/:id/status', updateFestStatus);
 
 // Admin - Users & Hosts
 router.get('/admin/users', getUsers);
+router.get('/admin/users/analytics/:uid', getUserAnalytics);
 router.get('/admin/hosts', getHosts);
 router.put('/admin/hosts/:id/verification', updateHostVerification);
 

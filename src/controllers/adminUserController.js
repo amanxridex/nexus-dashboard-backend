@@ -60,4 +60,45 @@ const updateHostVerification = async (req, res) => {
      }
 };
 
-module.exports = { getUsers, getHosts, updateHostVerification };
+const getUserAnalytics = async (req, res) => {
+    try {
+        const { uid } = req.params;
+        if (!uid) return res.status(400).json({ success: false, message: 'UID is required' });
+
+        // 1. Fetch Core Profile & Telemetry
+        const { data: user, error: userErr } = await userDb.from('users')
+            .select('*')
+            .eq('firebase_uid', uid)
+            .single();
+
+        if (userErr || !user) {
+            return res.status(404).json({ success: false, message: 'User not found in consumer DB' });
+        }
+
+        // 2. Fetch Wallet Data
+        const { data: wallet } = await userDb.from('wallets')
+            .select('*')
+            .eq('firebase_uid', uid)
+            .single();
+
+        // 3. Fetch Booking History
+        const { data: bookings } = await userDb.from('bookings')
+            .select('*')
+            .eq('firebase_uid', uid)
+            .order('created_at', { ascending: false });
+
+        return res.status(200).json({
+            success: true,
+            data: {
+                profile: user,
+                wallet: wallet || { balance: 0, currency: 'INR', status: 'Inactive' },
+                bookings: bookings || []
+            }
+        });
+    } catch (err) {
+        console.error("User Analytics Error:", err);
+        return res.status(500).json({ success: false, message: 'Internal Analytics Fault' });
+    }
+};
+
+module.exports = { getUsers, getHosts, updateHostVerification, getUserAnalytics };
