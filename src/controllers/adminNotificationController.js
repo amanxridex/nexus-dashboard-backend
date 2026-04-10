@@ -162,7 +162,7 @@ exports.getBroadcastDetails = async (req, res, next) => {
         const { id } = req.params;
         if (!id) return res.status(400).json({ success: false, message: 'Broadcast ID required' });
 
-        const decoded = Buffer.from(id, 'base64').toString('ascii');
+        const decoded = Buffer.from(id, 'base64').toString('utf8');
         const [title, body, audience] = decoded.split('|');
 
         if (!title || !body || !audience) return res.status(400).json({ success: false, message: 'Invalid Broadcast ID' });
