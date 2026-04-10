@@ -193,26 +193,20 @@ exports.getBroadcastDetails = async (req, res, next) => {
         }
 
         // 3. Map details into final array
-        const recipientList = notifs.map(n => {
+        let recipientList = notifs.map(n => {
             const u = usersInfo?.find(u => u.firebase_uid === n.firebase_uid) || {};
             return {
                 firebase_uid: n.firebase_uid,
                 sent_at: n.created_at,
                 full_name: u.full_name || 'N/A',
                 email: u.email || 'N/A',
-                phone: u.phone_number || 'N/A', // Assuming column name is phone_number or phone, check later if UI is empty
+                phone: u.phone || 'N/A',
                 fcm_token: u.fcm_token || 'N/A'
             };
         });
 
-        // Safe check for "phone" column if "phone_number" wasn't defined
-        // Supabase schema check
-        if (usersInfo && usersInfo.length > 0 && typeof usersInfo[0].phone !== 'undefined') {
-             recipientList.forEach(r => {
-                 const u = usersInfo.find(u => u.firebase_uid === r.firebase_uid);
-                 if (u && u.phone) r.phone = u.phone;
-             });
-        }
+        // 4. Safely filter out anyone who doesn't actually have an FCM token (meaning they never received the physical push)
+        recipientList = recipientList.filter(r => r.fcm_token !== 'N/A' && r.fcm_token);
 
         return res.status(200).json({
             success: true,
