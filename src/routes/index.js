@@ -9,7 +9,7 @@ const { getPayments } = require('../controllers/adminPaymentController');
 const { getColleges, addCollege, updateCollege, deleteCollege } = require('../controllers/adminCollegeController');
 const { getAnalytics } = require('../controllers/adminAnalyticsController');
 const { sendAdminNotification, getNotificationHistory, getBroadcastDetails } = require('../controllers/adminNotificationController');
-const { loginAdmin } = require('../controllers/adminAuthController');
+const { loginAdmin, refreshAdmin } = require('../controllers/adminAuthController');
 const { verifyToken } = require('../middlewares/authMiddleware');
 const rateLimit = require('express-rate-limit');
 
@@ -27,6 +27,7 @@ router.get('/health', (req, res) => {
 
 // Admin Auth
 router.post('/admin/auth/login', loginLimiter, loginAdmin);
+router.post('/admin/auth/refresh', refreshAdmin);
 
 // === APPLY GLOBAL JWT SECURITY VAULT TO ALL ROUTES BELOW ===
 router.use(verifyToken);

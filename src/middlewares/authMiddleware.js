@@ -1,8 +1,20 @@
 const jwt = require('jsonwebtoken');
 
 const verifyToken = (req, res, next) => {
-    // Exempt login and health routes
-    if (req.path === '/admin/auth/login' || req.path === '/health') {
+    // Phase 1: Pure IP Firewall validation
+    if (process.env.ADMIN_IP && process.env.ADMIN_IP !== '*') {
+        const allowedIps = process.env.ADMIN_IP.split(',').map(ip => ip.trim());
+        // Using req.ip (trust proxy must be configured on express later if behind LB)
+        const requestIp = req.ip || req.connection.remoteAddress;
+        
+        if (!allowedIps.includes(requestIp)) {
+            console.error(`MILITARY FIREWALL DROPPED UNAUTHORIZED IP: ${requestIp}`);
+            return res.status(403).json({ success: false, message: 'Forbidden: IP address not whitelisted.' });
+        }
+    }
+
+    // Phase 2: Token Verification (Exempt login, refresh and health routes)
+    if (req.path === '/admin/auth/login' || req.path === '/health' || req.path === '/admin/auth/refresh') {
         return next();
     }
 
