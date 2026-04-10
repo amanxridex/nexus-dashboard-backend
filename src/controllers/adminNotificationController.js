@@ -3,7 +3,7 @@ const { userDb, hostDb } = require('../config/supabase');
 
 exports.sendAdminNotification = async (req, res, next) => {
     try {
-        const { targetAudience, specificUid, title, body, type = 'system' } = req.body;
+        const { targetAudience, specificUid, title, body, type = 'system', link = '/index.html' } = req.body;
 
         if (!title || !body || !targetAudience) {
             return res.status(400).json({ success: false, message: 'Title, body, and target audience required' });
@@ -31,7 +31,7 @@ exports.sendAdminNotification = async (req, res, next) => {
                             badge: 'https://reseat.vercel.app/assets/logo.png'
                         }
                     },
-                    data: { type },
+                    data: { type, link },
                     tokens: chunk,
                 };
                 try {
