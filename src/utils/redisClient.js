@@ -5,12 +5,18 @@ let isRedisConnected = false;
 
 async function connectRedis() {
     try {
+        if (!process.env.REDIS_URL) {
+            console.warn('[Redis] REDIS_URL not provided. Running without cache layer.');
+            return;
+        }
+
         redisClient = createClient({
-            url: process.env.REDIS_URL || 'redis://localhost:6379'
+            url: process.env.REDIS_URL
         });
 
         redisClient.on('error', (err) => {
-            console.error('[Redis Client Error]', err.message);
+            // Only log once and don't spam if it drops, or log a simple warning
+            // To avoid log spam, we just track status
             isRedisConnected = false;
         });
 
