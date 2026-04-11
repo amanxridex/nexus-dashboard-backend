@@ -1,9 +1,9 @@
-const supabase = require('../config/supabase');
+const { hostDb } = require('../config/supabase');
 
 // Get all properties
 exports.getProperties = async (req, res) => {
     try {
-        const { data, error, count } = await supabase
+        const { data, error, count } = await hostDb
             .from('properties')
             .select(`
                 *,
@@ -36,7 +36,7 @@ exports.updatePropertyStatus = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Invalid status' });
         }
 
-        const { data, error } = await supabase
+        const { data, error } = await hostDb
             .from('properties')
             .update({ status })
             .eq('id', id)
