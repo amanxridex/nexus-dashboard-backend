@@ -10,6 +10,7 @@ const { getColleges, addCollege, updateCollege, deleteCollege } = require('../co
 const { getAnalytics } = require('../controllers/adminAnalyticsController');
 const { sendAdminNotification, getNotificationHistory, getBroadcastDetails } = require('../controllers/adminNotificationController');
 const { getProperties, updatePropertyStatus } = require('../controllers/adminPropertyController');
+const { getGyms, updateGymStatus } = require('../controllers/adminGymController');
 const { loginAdmin, refreshAdmin } = require('../controllers/adminAuthController');
 const { verifyToken } = require('../middlewares/authMiddleware');
 const cacheMiddleware = require('../middleware/cacheMiddleware');
@@ -46,6 +47,10 @@ router.put('/admin/fests/:id/status', updateFestStatus);
 // Admin - Properties
 router.get('/admin/properties', getProperties);
 router.patch('/admin/properties/:id/status', updatePropertyStatus);
+
+// Admin - Gyms
+router.get('/admin/gyms', getGyms);
+router.patch('/admin/gyms/:id/status', updateGymStatus);
 
 // Admin - Users & Hosts
 router.get('/admin/users', getUsers);
