@@ -7,7 +7,7 @@ exports.getProperties = async (req, res) => {
             .from('properties')
             .select(`
                 *,
-                hosts ( business_name, city, user_name, phone_number, avatar_url )
+                hosts ( business_name, city, full_name, phone, avatar_url )
             `, { count: 'exact' })
             .order('created_at', { ascending: false });
 
