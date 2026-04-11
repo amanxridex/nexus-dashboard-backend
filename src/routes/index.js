@@ -9,8 +9,10 @@ const { getPayments } = require('../controllers/adminPaymentController');
 const { getColleges, addCollege, updateCollege, deleteCollege } = require('../controllers/adminCollegeController');
 const { getAnalytics } = require('../controllers/adminAnalyticsController');
 const { sendAdminNotification, getNotificationHistory, getBroadcastDetails } = require('../controllers/adminNotificationController');
+const { getProperties, updatePropertyStatus } = require('../controllers/adminPropertyController');
 const { loginAdmin, refreshAdmin } = require('../controllers/adminAuthController');
 const { verifyToken } = require('../middlewares/authMiddleware');
+const cacheMiddleware = require('../middleware/cacheMiddleware');
 const rateLimit = require('express-rate-limit');
 
 // Strict Rate Limiting for Login Auth (Max 5 guesses per 15 minutes per IP)
@@ -33,13 +35,17 @@ router.post('/admin/auth/refresh', refreshAdmin);
 router.use(verifyToken);
 
 // Dashboard Modules
-router.get('/dashboard/stats', getDashboardStats);
-router.get('/dashboard/feed', getRecentActivity);
-router.get('/dashboard/top-fests', getTopFests);
+router.get('/dashboard/stats', cacheMiddleware({ EX: 60 }), getDashboardStats); // Cache stats for 1 minute
+router.get('/dashboard/feed', cacheMiddleware({ EX: 60 }), getRecentActivity);
+router.get('/dashboard/top-fests', cacheMiddleware({ EX: 120 }), getTopFests);
 
 // Admin - Fests
 router.get('/admin/fests', getFests);
 router.put('/admin/fests/:id/status', updateFestStatus);
+
+// Admin - Properties
+router.get('/admin/properties', getProperties);
+router.patch('/admin/properties/:id/status', updatePropertyStatus);
 
 // Admin - Users & Hosts
 router.get('/admin/users', getUsers);
@@ -60,7 +66,7 @@ router.put('/admin/colleges/:id', updateCollege);
 router.delete('/admin/colleges/:id', deleteCollege);
 
 // Admin - Analytics
-router.get('/admin/analytics', getAnalytics);
+router.get('/admin/analytics', cacheMiddleware({ EX: 300 }), getAnalytics);
 
 // Admin - Notifications
 router.post('/admin/notifications/send', sendAdminNotification);
