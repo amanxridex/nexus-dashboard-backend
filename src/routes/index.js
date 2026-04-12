@@ -33,6 +33,10 @@ router.get('/health', (req, res) => {
 router.post('/admin/auth/login', loginLimiter, loginAdmin);
 router.post('/admin/auth/refresh', refreshAdmin);
 
+// Client-Side Telemetry Ingestion API (Public Route)
+const { ingestCrashReport } = require('../controllers/telemetryController');
+router.post('/telemetry/crash', ingestCrashReport);
+
 // === APPLY GLOBAL JWT SECURITY VAULT TO ALL ROUTES BELOW ===
 router.use(verifyToken);
 

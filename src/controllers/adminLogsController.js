@@ -13,9 +13,15 @@ const RENDER_TARGETS = [
     { id: 'srv-d74pfr7pm1nc739350ig', name: 'Admin Database Layer', platform: 'Render' }
 ];
 
+const TELEMETRY_TARGET = {
+    id: 'client-devices',
+    name: '🔴 Live Client Devices (Crash Reports)',
+    platform: 'Client'
+};
+
 exports.getAvailableLogProjects = async (req, res) => {
     try {
-        const projects = [...VERCEL_TARGETS, ...RENDER_TARGETS];
+        const projects = [...VERCEL_TARGETS, ...RENDER_TARGETS, TELEMETRY_TARGET];
         res.json({ success: true, projects });
     } catch (err) {
         console.error('Error fetching log projects:', err);
@@ -104,6 +110,10 @@ exports.fetchProjectLogs = async (req, res) => {
 
             return res.json({ success: true, logs });
 
+        } else if (platform === 'Client') {
+            const { getClientTelemetryLogs } = require('./telemetryController');
+            return getClientTelemetryLogs(req, res);
+            
         } else {
             return res.status(400).json({ success: false, message: 'Invalid platform specified.' });
         }
