@@ -1,12 +1,12 @@
-const supabase = require('../config/database');
+const { hostDb } = require('../config/supabase');
 
 exports.getRestaurants = async (req, res) => {
     try {
-        const { data, error } = await supabase
+        const { data, error } = await hostDb
             .from('restaurants')
             .select(`
                 *,
-                hosts (full_name, email, phone_number)
+                hosts (full_name, email, phone)
             `)
             .order('created_at', { ascending: false });
 
@@ -31,7 +31,7 @@ exports.updateRestaurantStatus = async (req, res) => {
             return res.status(400).json({ success: false, error: 'Invalid status' });
         }
 
-        const { data, error } = await supabase
+        const { data, error } = await hostDb
             .from('restaurants')
             .update({ status })
             .eq('id', id)
