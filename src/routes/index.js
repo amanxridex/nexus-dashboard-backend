@@ -83,4 +83,9 @@ router.post('/admin/notifications/send', sendAdminNotification);
 router.get('/admin/notifications/history', getNotificationHistory);
 router.get('/admin/notifications/broadcast-details/:id', getBroadcastDetails);
 
+// Admin - Logs (Vercel & Render Integration)
+const { getAvailableLogProjects, fetchProjectLogs } = require('../controllers/adminLogsController');
+router.get('/admin/logs/projects', getAvailableLogProjects);
+router.get('/admin/logs/fetch', fetchProjectLogs);
+
 module.exports = router;
