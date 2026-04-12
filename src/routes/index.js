@@ -11,6 +11,7 @@ const { getAnalytics } = require('../controllers/adminAnalyticsController');
 const { sendAdminNotification, getNotificationHistory, getBroadcastDetails } = require('../controllers/adminNotificationController');
 const { getProperties, updatePropertyStatus } = require('../controllers/adminPropertyController');
 const { getGyms, updateGymStatus } = require('../controllers/adminGymController');
+const { getRestaurants, updateRestaurantStatus } = require('../controllers/adminRestaurantController');
 const { loginAdmin, refreshAdmin } = require('../controllers/adminAuthController');
 const { verifyToken } = require('../middlewares/authMiddleware');
 const cacheMiddleware = require('../middleware/cacheMiddleware');
@@ -51,6 +52,10 @@ router.patch('/admin/properties/:id/status', updatePropertyStatus);
 // Admin - Gyms
 router.get('/admin/gyms', getGyms);
 router.patch('/admin/gyms/:id/status', updateGymStatus);
+
+// Admin - Restaurants
+router.get('/admin/restaurants', getRestaurants);
+router.patch('/admin/restaurants/:id/status', updateRestaurantStatus);
 
 // Admin - Users & Hosts
 router.get('/admin/users', getUsers);
