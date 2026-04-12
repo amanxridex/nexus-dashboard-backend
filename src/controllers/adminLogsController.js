@@ -56,8 +56,8 @@ exports.fetchProjectLogs = async (req, res) => {
             const isValid = RENDER_TARGETS.some(t => t.id === projectId);
             if (!isValid) return res.status(403).json({ success: false, message: 'Unauthorized service requested.' });
 
-            // Fetch Render Service Logs
-            const response = await fetch(`https://api.render.com/v1/services/${projectId}/logs?limit=50`, {
+            // Fetch Render Deployment Telemetry (Since raw console stdout requires Datadog Log Drains)
+            const response = await fetch(`https://api.render.com/v1/services/${projectId}/deploys?limit=25`, {
                 headers: { 
                     'Authorization': `Bearer ${process.env.RENDER_API_KEY}`,
                     'Accept': 'application/json' 
@@ -65,26 +65,41 @@ exports.fetchProjectLogs = async (req, res) => {
             });
             const data = await response.json();
 
-            // Normalize
-            const logs = (data || []).map(log => {
-                let msg = log.log || '';
+            // Normalize telemetry blocks into system logs
+            const logs = [];
+            (data || []).forEach(block => {
+                const dep = block.deploy;
+                if (!dep) return;
+                
                 let level = 'info';
-                if (msg.toLowerCase().includes('error') || msg.toLowerCase().includes('fail') || msg.toLowerCase().includes('exception')) {
+                if (dep.status === 'update_failed' || dep.status === 'build_failed' || dep.status === 'pre_deploy_failed') {
                     level = 'error';
-                } else if (msg.toLowerCase().includes('warn')) {
+                } else if (dep.status === 'canceled') {
                     level = 'warning';
                 }
-                
-                return {
-                    id: log.id || Math.random().toString(36).substring(7),
-                    timestamp: log.timestamp || new Date().toISOString(),
-                    message: msg.trim(),
+
+                // Inject Deployment Status
+                logs.push({
+                    id: dep.id,
+                    timestamp: dep.updatedAt || dep.createdAt,
+                    message: `System Deployment Action: [${dep.status.toUpperCase()}] triggered by '${dep.trigger}'`,
                     level: level,
-                    source: 'container'
-                };
+                    source: 'render-orchestrator'
+                });
+
+                // Inject Commit details
+                if (dep.commit) {
+                    logs.push({
+                        id: dep.id + '-commit',
+                        timestamp: dep.createdAt,
+                        message: `Commit Payload: ${dep.commit.message}`,
+                        level: 'info',
+                        source: 'github-bridge'
+                    });
+                }
             });
 
-            // Reorder Render logs (they might be older first depending on api, we want newest first)
+            // Ensure chronological ordering for terminal
             logs.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
 
             return res.json({ success: true, logs });
