@@ -52,6 +52,18 @@ exports.updateRestaurantStatus = async (req, res) => {
 
         if (error) throw error;
 
+        // Invalidate Consumer Redis Cache instantly
+        try {
+            const { getClient, isConnected } = require('../utils/redisClient');
+            if (isConnected()) {
+                const client = getClient();
+                await client.del('cache:/api/restaurants');
+                console.log('[Cache Bust] Cleared cache:/api/restaurants natively due to Admin approval.');
+            }
+        } catch (cacheErr) {
+            console.error('[Cache Bust Error] Failed to purge restaurant cache:', cacheErr.message);
+        }
+
         res.json({
             success: true,
             message: `Structural restaurant status upgraded to ${targetStatus}`,
