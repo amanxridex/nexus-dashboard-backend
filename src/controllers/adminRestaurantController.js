@@ -27,13 +27,26 @@ exports.updateRestaurantStatus = async (req, res) => {
         const { id } = req.params;
         const { status } = req.body;
 
-        if (!['pending', 'published', 'rejected'].includes(status)) {
-            return res.status(400).json({ success: false, error: 'Invalid status' });
+        if (!['pending', 'active', 'published', 'rejected', 'reject_update'].includes(status)) {
+            return res.status(400).json({ success: false, error: 'Invalid status schema' });
+        }
+        
+        // Fetch current row physically
+        const { data: currentRest, error: fetchErr } = await hostDb.from('restaurants').select('*').eq('id', id).single();
+        if (fetchErr || !currentRest) throw fetchErr || new Error("Restaurant not found mapping.");
+
+        let targetStatus = status === 'published' ? 'active' : status;
+        let updates = { status: targetStatus };
+
+        if (status === 'reject_update') {
+            updates = { status: 'active', pending_changes: null };
+        } else if (targetStatus === 'active' && currentRest.pending_changes) {
+            updates = { ...updates, ...currentRest.pending_changes, pending_changes: null };
         }
 
         const { data, error } = await hostDb
             .from('restaurants')
-            .update({ status })
+            .update(updates)
             .eq('id', id)
             .select();
 
@@ -41,7 +54,7 @@ exports.updateRestaurantStatus = async (req, res) => {
 
         res.json({
             success: true,
-            message: `Restaurant status updated to ${status}`,
+            message: `Structural restaurant status upgraded to ${targetStatus}`,
             data: data[0]
         });
     } catch (error) {
