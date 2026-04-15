@@ -61,6 +61,11 @@ router.patch('/admin/gyms/:id/status', updateGymStatus);
 router.get('/admin/restaurants', getRestaurants);
 router.patch('/admin/restaurants/:id/status', updateRestaurantStatus);
 
+// Admin - Sponsored Homes
+const { getSponsoredHomes, uploadSponsoredHome } = require('../controllers/adminSponsoredController');
+router.get('/admin/sponsored-homes', getSponsoredHomes);
+router.post('/admin/sponsored-homes', uploadSponsoredHome);
+
 // Admin - Users & Hosts
 router.get('/admin/users', getUsers);
 router.get('/admin/users/analytics/:uid', getUserAnalytics);
