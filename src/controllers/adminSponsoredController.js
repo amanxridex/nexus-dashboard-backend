@@ -6,6 +6,7 @@ exports.getSponsoredHomes = async (req, res) => {
         const { data, error } = await hostDb
             .from('sponsored_homes')
             .select('*')
+            .order('display_order', { ascending: true })
             .order('created_at', { ascending: false });
 
         if (error) {
@@ -78,6 +79,57 @@ exports.uploadSponsoredHome = async (req, res) => {
         res.status(201).json({ success: true, data: data[0], message: "Sponsored home added successfully." });
     } catch (err) {
         console.error("Error uploading sponsored home:", err.message);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+};
+
+exports.updateSponsoredHome = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { is_active, display_order } = req.body;
+
+        const { data, error } = await hostDb
+            .from('sponsored_homes')
+            .update({ is_active, display_order })
+            .eq('id', id)
+            .select();
+
+        if (error) {
+            return res.status(400).json({ success: false, message: error.message });
+        }
+
+        res.status(200).json({ success: true, data: data[0], message: "Sponsored home updated successfully." });
+    } catch (err) {
+        console.error("Error updating sponsored home:", err.message);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+};
+
+exports.deleteSponsoredHome = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const { data, error } = await hostDb
+            .from('sponsored_homes')
+            .delete()
+            .eq('id', id)
+            .select();
+
+        if (error) {
+            return res.status(400).json({ success: false, message: error.message });
+        }
+
+        if (data && data.length > 0 && data[0].image_url) {
+            // Optional: Delete from storage bucket if you'd like
+            const url = data[0].image_url;
+            const parts = url.split('/');
+            const fileName = parts[parts.length - 1];
+            await hostDb.storage.from('sponsored-homes').remove([fileName]);
+        }
+
+        res.status(200).json({ success: true, message: "Sponsored home deleted successfully." });
+    } catch (err) {
+        console.error("Error deleting sponsored home:", err.message);
         res.status(500).json({ success: false, message: "Server error" });
     }
 };
